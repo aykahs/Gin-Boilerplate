@@ -10,7 +10,7 @@ var (
 
 func Init() {
 	LogrusLogger = InitLogrusLogger()
-
-	// ZapLogger = InitZapLogger()
-	// ZapSugar = ZapLogger.Sugar()
+	if LogrusLogger == nil {
+		panic("Failed to initialize logger")
+	}
 }

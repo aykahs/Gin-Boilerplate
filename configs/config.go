@@ -34,7 +34,14 @@ func LoadConfig() *Config {
 	if err := viper.Unmarshal(config); err != nil {
 		panic(err)
 	}
-
+	// switch gin.Mode() {
+	// case gin.DebugMode:
+	// 	config = config
+	// case gin.ReleaseMode:
+	// 	config = config
+	// default:
+	// 	fmt.Printf(fmt.Sprintf("Unknown gin mode %s", gin.Mode()))
+	// }
 	return config
 }
 

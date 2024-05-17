@@ -1,8 +1,6 @@
 package main
 
 import (
-	"net/http"
-
 	"github.com/aykahs/Gin-Boilerplate/configs"
 	"github.com/aykahs/Gin-Boilerplate/pkg/mysql"
 	"github.com/aykahs/Gin-Boilerplate/router"
@@ -10,8 +8,6 @@ import (
 
 	uuid "github.com/google/uuid"
 )
-
-var db = make(map[string]string)
 
 func RequestIDMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -21,21 +17,14 @@ func RequestIDMiddleware() gin.HandlerFunc {
 	}
 }
 
-func setupRouter() *gin.Engine {
-	r := gin.Default()
-	r.Use(RequestIDMiddleware())
-	// Ping test
-	r.GET("/ping", func(c *gin.Context) {
-		c.String(http.StatusOK, "pong")
-	})
-	return r
-}
-
 func main() {
 	configs.Init()
 	EnvConfig := configs.EnvConfig
 	mysql.Connect(&EnvConfig.Mysql)
+	// gin.SetMode(gin.DebugMode)
 	router.Init()
 	r := router.Router
+	r.SetTrustedProxies([]string{"127.0.0.1"})
+
 	r.Run(EnvConfig.Server.Port)
 }

@@ -52,6 +52,7 @@ func JwtVerify(tokenStr string) (*Claims, error) {
 	if !ok {
 		return nil, err
 	}
+	fmt.Println(claims.Uid)
 	return claims, err
 
 }

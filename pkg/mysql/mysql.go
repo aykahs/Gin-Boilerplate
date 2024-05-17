@@ -5,7 +5,6 @@ import (
 
 	"github.com/aykahs/Gin-Boilerplate/configs"
 	"github.com/aykahs/Gin-Boilerplate/models"
-	"github.com/aykahs/Gin-Boilerplate/pkg/logger"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -14,7 +13,7 @@ var DB *gorm.DB
 
 func Connect(config *configs.Mysql) *gorm.DB {
 
-	logger := logger.LogrusLogger
+	// logger := logger.LogrusLogger
 
 	address := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 		config.User,
@@ -31,19 +30,14 @@ func Connect(config *configs.Mysql) *gorm.DB {
 	}), &gorm.Config{})
 
 	if err != nil {
-		panic(`😫: Connected failed, check your Mysql with ` + address)
+		panic("Failed to connect to MySQL")
 	}
 
-	// Migrate the schema
-	migrateErr := db.AutoMigrate(&models.User{})
-	if migrateErr != nil {
-		panic(`Auto migrate failed, check your Mysql with ` + address)
+	if err := db.AutoMigrate(&models.User{}); err != nil {
+		panic("Failed to auto-migrate database schema")
 	}
 
-	// export DB
 	DB = db
-
-	logger.Printf(`Successfully connected to Mysql at ` + address)
 
 	return db
 
