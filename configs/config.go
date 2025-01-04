@@ -15,14 +15,14 @@ type Config struct {
 
 var EnvConfig *Config
 
-func LoadConfig() *Config {
-
+func LoadConfig(env string) *Config {
+	println(env)
 	path, err := os.Getwd() // get curent path
 	if err != nil {
 		panic(err)
 	}
 
-	viper.SetConfigName("config")
+	viper.SetConfigName(env + ".config")
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath(path + "/configs") // path to look for the config file in
 
@@ -45,6 +45,6 @@ func LoadConfig() *Config {
 	return config
 }
 
-func Init() {
-	EnvConfig = LoadConfig()
+func Init(env string) {
+	EnvConfig = LoadConfig(env)
 }

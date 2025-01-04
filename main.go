@@ -1,10 +1,14 @@
 package main
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/aykahs/Gin-Boilerplate/configs"
-	"github.com/aykahs/Gin-Boilerplate/pkg/mysql"
-	"github.com/aykahs/Gin-Boilerplate/router"
+	"github.com/aykahs/Gin-Boilerplate/internal/pkg/mysql"
+	"github.com/aykahs/Gin-Boilerplate/internal/router"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 
 	uuid "github.com/google/uuid"
 )
@@ -18,10 +22,17 @@ func RequestIDMiddleware() gin.HandlerFunc {
 }
 
 func main() {
-	configs.Init()
+	err := godotenv.Load()
+	if err != nil {
+		fmt.Println("Error loading .env file")
+	}
+	env := os.Getenv("APP_ENV")
+	ginmode := os.Getenv("GIN_MODE")
+
+	configs.Init(env)
 	EnvConfig := configs.EnvConfig
 	mysql.Connect(&EnvConfig.Mysql)
-	// gin.SetMode(gin.DebugMode)
+	gin.SetMode(ginmode)
 	router.Init()
 	r := router.Router
 	r.SetTrustedProxies([]string{"127.0.0.1"})
