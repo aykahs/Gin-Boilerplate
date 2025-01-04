@@ -1,23 +1,24 @@
-package router
+package authrouter
 
 import (
-	"github.com/aykahs/Gin-Boilerplate/internal/controllers/keyclock"
+	authcontrollers "github.com/aykahs/Gin-Boilerplate/internal/controllers/keyclock"
+	"github.com/aykahs/Gin-Boilerplate/internal/middlewares"
 	"github.com/gin-gonic/gin"
 )
 
-var authController = new(keyclock.AuthController)
+var authController = new(authcontrollers.AuthController)
 
 func LoadKeyclockRoutes(r *gin.Engine) *gin.RouterGroup {
 
-	Keyclock := r.Group("/Keyclocks")
+	Keyclock := r.Group("/")
 	{
-		Keyclock.POST("/login", authController.Login)
+		Keyclock.POST("/login", authController.KeyClockLogin)
 		// Keyclock.POST("/regiser", authController.Register)
 		// Keyclock.GET("/list", authController.Register)
-		// Keyclock.Use(middlewares.Jwt())
-		// {
-		// 	Keyclock.GET("/me", authController.AuthMe)
-		// }
+		Keyclock.Use(middlewares.Jwt())
+		{
+			Keyclock.POST("/me", authController.Me)
+		}
 
 	}
 	return Keyclock

@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/aykahs/Gin-Boilerplate/internal/middlewares"
+	authrouter "github.com/aykahs/Gin-Boilerplate/internal/router/keyclock"
 
 	"github.com/gin-gonic/gin"
 )
@@ -19,6 +20,7 @@ func Init() {
 			"message": "pong",
 		})
 	})
-	LoadUserRoutes(Router)
+	// LoadUserRoutes(Router)
+	authrouter.LoadKeyclockRoutes(Router)
 
 }
