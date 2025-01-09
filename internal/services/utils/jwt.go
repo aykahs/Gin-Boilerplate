@@ -6,86 +6,18 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"strings"
 	"time"
 
-	"github.com/aykahs/Gin-Boilerplate/configs"
 	keyclockservice "github.com/aykahs/Gin-Boilerplate/internal/services/keyclock"
+	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 
 	JwtKC "github.com/aykahs/Gin-Boilerplate/internal/types"
 )
 
-type Claims struct {
-	jwt.RegisteredClaims
-
-	Uid      uint   `json:"uid"`
-	Username string `json:"username"`
-}
-
-type KeyClockClaims struct {
-	Jti                  string         `json:"jti"`                // JWT ID
-	RealmAccess          RealmAccess    `json:"realm_access"`       // Realm-specific access roles
-	ResourceAccess       ResourceAccess `json:"resource_access"`    // Resource-specific access roles
-	EmailVerified        bool           `json:"email_verified"`     // Whether email is verified
-	Name                 string         `json:"name"`               // Full name
-	PreferredUsername    string         `json:"preferred_username"` // Preferred username
-	Email                string         `json:"email"`              // User email
-	jwt.RegisteredClaims                // Embedded registered claims like exp, iat, sub
-}
-
-// RealmAccess represents the roles in the realm (like offline_access, default-roles-core, etc.)
-type RealmAccess struct {
-	Roles []string `json:"roles"`
-}
-
-// ResourceAccess represents resource-specific access roles (e.g., account access roles)
-type ResourceAccess struct {
-	Account struct {
-		Roles []string `json:"roles"`
-	} `json:"account"`
-}
-
-var auth = new(keyclockservice.KeyClockAuthService)
-
-// generate tokens used for auth
-func GenerateToken(claims *Claims) string {
-	Envconfig := configs.EnvConfig
-
-	claims.ExpiresAt = jwt.NewNumericDate(time.Now().Add(time.Minute * 30)) // set expire time
-
-	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(Envconfig.Jwt.Secret))
-	if err != nil {
-		panic(err)
-	}
-	return token
-}
-
-// verify token
-func JwtVerify(tokenStr string) (*Claims, error) {
-
-	Envconfig := configs.EnvConfig
-	token, err := jwt.ParseWithClaims(tokenStr, &Claims{}, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-		return []byte(Envconfig.Jwt.Secret), nil
-	})
-
-	if !token.Valid || err != nil {
-		return nil, fmt.Errorf("token invalid")
-	}
-	claims, ok := token.Claims.(*Claims)
-
-	if float64(claims.ExpiresAt.Unix()) < float64(time.Now().Unix()) {
-		return nil, fmt.Errorf("token expired")
-	}
-
-	if !ok {
-		return nil, err
-	}
-	fmt.Println(claims.Uid)
-	return claims, err
-
+var auth = &keyclockservice.KeyClockAuthService{
+	HttpCurl: &keyclockservice.HttpCurl{},
 }
 
 func GetPublicKeyFromJWKS(jwks *JwtKC.JWKS, kid string) (*rsa.PublicKey, error) {
@@ -117,12 +49,13 @@ func GetPublicKeyFromJWKS(jwks *JwtKC.JWKS, kid string) (*rsa.PublicKey, error) 
 
 	return nil, errors.New("key ID not found in JWKS")
 }
-func JwtKeyClockVerify(tokenStr string) (*KeyClockClaims, error) {
+func JwtKeyClockVerify(tokenStr string) (*JwtKC.KeyClockClaims, error) {
 	jwks, err := auth.FetchJWKS()
+	fmt.Print(err)
 	if err != nil {
 		return nil, err
 	}
-	token, err := jwt.ParseWithClaims(tokenStr, &KeyClockClaims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenStr, &JwtKC.KeyClockClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
@@ -136,7 +69,7 @@ func JwtKeyClockVerify(tokenStr string) (*KeyClockClaims, error) {
 	if err != nil {
 		return nil, fmt.Errorf("token invalid")
 	}
-	claims, ok := token.Claims.(*KeyClockClaims)
+	claims, ok := token.Claims.(*JwtKC.KeyClockClaims)
 	if float64(claims.ExpiresAt.Unix()) < float64(time.Now().Unix()) {
 		return nil, fmt.Errorf("token expired")
 	}
@@ -146,4 +79,19 @@ func JwtKeyClockVerify(tokenStr string) (*KeyClockClaims, error) {
 	}
 	return claims, err
 
+}
+
+func GetToken(ctx *gin.Context) (string, error) {
+	tokenStr := ctx.GetHeader("Authorization")
+	if tokenStr == "" {
+		ctx.Abort()
+		return "", errors.New("authorization header is missing")
+	}
+	parts := strings.Split(tokenStr, " ")
+
+	if len(parts) != 2 || parts[0] != "Bearer" {
+		return "", errors.New("authorization header is missing")
+	}
+
+	return parts[1], nil
 }

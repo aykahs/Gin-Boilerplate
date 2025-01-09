@@ -5,7 +5,6 @@ import (
 
 	"github.com/aykahs/Gin-Boilerplate/internal/models"
 	"github.com/aykahs/Gin-Boilerplate/internal/pkg/mysql"
-	"github.com/aykahs/Gin-Boilerplate/internal/services/utils"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -34,12 +33,7 @@ func (userService *UserService) LoginByUsernamePassword(username string, passwor
 	if err != nil {
 		return "", fmt.Errorf("username or password is invalid")
 	}
-	claims := utils.Claims{
-		Username: user.Username,
-		Uid:      user.ID,
-	}
-	token := utils.GenerateToken(&claims)
-	return token, nil
+	return "", nil
 }
 
 func hashPassword(password string) (string, error) {

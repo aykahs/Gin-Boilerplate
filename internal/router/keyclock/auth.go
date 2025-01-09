@@ -13,11 +13,11 @@ func LoadKeyclockRoutes(r *gin.Engine) *gin.RouterGroup {
 	Keyclock := r.Group("/")
 	{
 		Keyclock.POST("/login", authController.KeyClockLogin)
-		// Keyclock.POST("/regiser", authController.Register)
-		// Keyclock.GET("/list", authController.Register)
 		Keyclock.Use(middlewares.Jwt())
 		{
+			Keyclock.POST("/refresh", authController.KeyClockRefresh)
 			Keyclock.POST("/me", authController.Me)
+
 		}
 
 	}

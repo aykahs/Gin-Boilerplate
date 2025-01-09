@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/aykahs/Gin-Boilerplate/internal/services"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -13,20 +12,7 @@ var userService = new(services.UserService)
 type UserController struct{}
 
 func (userController *UserController) AuthMe(ctx *gin.Context) {
-	userID, _ := ctx.Get("user_id")
-	var userIDInterface interface{}
-	userIDInterface = userID
-	user_ID, ok := userIDInterface.(uint)
-	if !ok {
-		ctx.JSON(http.StatusBadRequest, gin.H{"code": http.StatusBadRequest, "message": "something went wrong!"})
-	}
-	err, user := userService.Me(user_ID)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"code": http.StatusBadRequest, "message": err.Error()})
-		return
-	}
-	ctx.JSON(http.StatusOK, user)
-
+	ctx.JSON(http.StatusOK, "")
 }
 func (userController *UserController) Register(ctx *gin.Context) {
 	data := make(map[string]interface{})
