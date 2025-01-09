@@ -23,6 +23,7 @@ type KeyClockClaims struct {
 	Name                 string         `json:"name"`               // Full name
 	PreferredUsername    string         `json:"preferred_username"` // Preferred username
 	Email                string         `json:"email"`              // User email
+	ExpiresIn            int            `json:"expires_in"`
 	jwt.RegisteredClaims                // Embedded registered claims like exp, iat, sub
 }
 

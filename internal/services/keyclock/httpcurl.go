@@ -13,7 +13,6 @@ type HttpCurl struct {
 }
 
 func (httpcurl *HttpCurl) HttpPayload(payload url.Values) {
-	fmt.Println(payload)
 	httpcurl.Payload = payload
 }
 func (httpcurl *HttpCurl) BaseUrl() string {

@@ -2,83 +2,83 @@ package utils
 
 import (
 	"crypto/rsa"
-	"encoding/base64"
+	"crypto/x509"
+	"encoding/pem"
 	"errors"
 	"fmt"
-	"math/big"
+	"os"
 	"strings"
-	"time"
 
-	keyclockservice "github.com/aykahs/Gin-Boilerplate/internal/services/keyclock"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 
 	JwtKC "github.com/aykahs/Gin-Boilerplate/internal/types"
 )
 
-var auth = &keyclockservice.KeyClockAuthService{
-	HttpCurl: &keyclockservice.HttpCurl{},
-}
-
-func GetPublicKeyFromJWKS(jwks *JwtKC.JWKS, kid string) (*rsa.PublicKey, error) {
-	for _, key := range jwks.Keys {
-		if key.Kid == kid {
-			// Decode the modulus (n)
-			modulus, err := base64.RawURLEncoding.DecodeString(key.N)
-			if err != nil {
-				return nil, fmt.Errorf("error decoding modulus: %v", err)
-			}
-
-			// Decode the exponent (e)
-			exponent, err := base64.RawURLEncoding.DecodeString(key.E)
-			if err != nil {
-				return nil, fmt.Errorf("error decoding exponent: %v", err)
-			}
-
-			// Convert exponent to integer
-			eInt := int(new(big.Int).SetBytes(exponent).Int64())
-
-			// Create the RSA public key
-			pubKey := &rsa.PublicKey{
-				N: new(big.Int).SetBytes(modulus),
-				E: eInt,
-			}
-			return pubKey, nil
-		}
-	}
-
-	return nil, errors.New("key ID not found in JWKS")
-}
-func JwtKeyClockVerify(tokenStr string) (*JwtKC.KeyClockClaims, error) {
-	jwks, err := auth.FetchJWKS()
-	fmt.Print(err)
+func GetPublicKeyFromJWKS() (*rsa.PublicKey, error) {
+	wd, err := os.Getwd()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error getting current directory: %w", err)
 	}
-	token, err := jwt.ParseWithClaims(tokenStr, &JwtKC.KeyClockClaims{}, func(token *jwt.Token) (interface{}, error) {
+	filePath := wd + "/internal/services/utils/public.pem"
+	pemData, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("error reading public key file: %w", err)
+	}
+
+	// Decode the PEM block
+	block, _ := pem.Decode(pemData)
+	if block == nil || block.Type != "PUBLIC KEY" {
+		return nil, errors.New("failed to decode PEM block containing public key")
+	}
+
+	// Parse the key
+	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing public key: %w", err)
+	}
+
+	// Assert the type
+	rsaPub, ok := pub.(*rsa.PublicKey)
+	if !ok {
+		return nil, errors.New("not an RSA public key")
+	}
+
+	return rsaPub, nil
+}
+
+func JwtKeyClockVerify(tokenStr string) (*JwtKC.KeyClockClaims, error) {
+	// Fetch the RSA public key
+	jwks, err := GetPublicKeyFromJWKS()
+	if err != nil {
+		return nil, fmt.Errorf("error fetching public key: %w", err)
+	}
+
+	// Prepare claims
+	claims := &JwtKC.KeyClockClaims{}
+	token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
+		// Ensure the signing method is RSA
 		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		kid, ok := token.Header["kid"].(string)
-		if !ok {
-			return nil, fmt.Errorf("missing kid in token header")
-		}
-
-		return GetPublicKeyFromJWKS(jwks, kid)
+		return jwks, nil
 	})
+
 	if err != nil {
-		return nil, fmt.Errorf("token invalid")
+		return nil, fmt.Errorf("error parsing token: %w", err)
 	}
+	fmt.Println(token.Claims)
+	// Validate token claims
 	claims, ok := token.Claims.(*JwtKC.KeyClockClaims)
-	if float64(claims.ExpiresAt.Unix()) < float64(time.Now().Unix()) {
-		return nil, fmt.Errorf("token expired")
+	if !ok || !token.Valid {
+		return nil, fmt.Errorf("invalid token")
 	}
 
-	if !ok {
-		return nil, err
-	}
-	return claims, err
+	// if time.Now().After(time.Unix(claims.ExpiresAt, 0)) {
+	// 	return nil, fmt.Errorf("token expired")
+	// }
 
+	return claims, nil
 }
 
 func GetToken(ctx *gin.Context) (string, error) {
