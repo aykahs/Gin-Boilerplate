@@ -1,7 +1,6 @@
 package middlewares
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/aykahs/Gin-Boilerplate/internal/services/utils"
@@ -17,7 +16,6 @@ func Jwt() gin.HandlerFunc {
 		}
 		claims, err := utils.JwtKeyClockVerify(tokenString)
 		ctx.Set("auth", claims)
-		fmt.Println(err)
 
 		if err != nil || claims == nil {
 			ctx.Abort()

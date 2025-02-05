@@ -31,6 +31,7 @@ func (auth *KeyClockAuthService) Login(username string, password string) (*JwtKC
 
 	resp, err := auth.HttpPost("token")
 	if err != nil {
+		fmt.Println(err)
 		return nil, fmt.Errorf("error creating request: %w", err)
 	}
 	defer resp.Body.Close()

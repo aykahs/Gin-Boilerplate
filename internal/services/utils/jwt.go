@@ -67,7 +67,6 @@ func JwtKeyClockVerify(tokenStr string) (*JwtKC.KeyClockClaims, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error parsing token: %w", err)
 	}
-	fmt.Println(token.Claims)
 	// Validate token claims
 	claims, ok := token.Claims.(*JwtKC.KeyClockClaims)
 	if !ok || !token.Valid {

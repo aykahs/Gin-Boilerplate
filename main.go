@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/aykahs/Gin-Boilerplate/configs"
-	"github.com/aykahs/Gin-Boilerplate/internal/pkg/mysql"
 	"github.com/aykahs/Gin-Boilerplate/internal/router"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -31,7 +30,7 @@ func main() {
 
 	configs.Init(env)
 	EnvConfig := configs.EnvConfig
-	mysql.Connect(&EnvConfig.Mysql)
+	// mysql.Connect(&EnvConfig.Mysql)
 	gin.SetMode(ginmode)
 	router.Init()
 	r := router.Router
